@@ -1,1 +1,48 @@
-import {useState} from 'react';import * as api from '../api/datasets';import {useResource} from '../hooks/useResource';import {refreshResources} from '../stores/resources';import PageTitle from '../components/common/PageTitle';import Notice from '../components/common/Notice';import type {User} from '../types/entities';export default function Datasets({user}:{user:User}){const{data,error}=useResource(api.list,[]);const[name,setName]=useState('补充完整孔段测井'),[source,setSource]=useState('shenxi_logs_import.csv'),[text,setText]=useState(''),[message,setMessage]=useState('');return <><PageTitle chapter="02 / COMPLETE LOGS" title="缺一层，就不静默跨过去" description="CSV为borehole,depth_m,value，truth仅可选模拟参考。每孔至少3点、最多1000点，按输入固定1米严格递增；重复/缺层/倒序和非有限读数拒绝。"/><Notice error={error||message}/><section className="paper table-scroll"><table><thead><tr><th>测井来源</th><th>记录数</th><th>完整孔段</th></tr></thead><tbody>{data.map(d=><tr key={d.id}><td><b>{d.name}</b><small>{d.source}</small></td><td>{d.row_count}</td><td>{d.boreholes.join(' / ')}</td></tr>)}</tbody></table></section>{user.role!=='viewer'&&<form className="paper form-grid" onSubmit={async e=>{e.preventDefault();try{await api.create({name,source,csv_text:text});setMessage('');setText('');refreshResources()}catch(e:any){setMessage(e.message)}}}><label>数据集名称<input aria-label="数据集名称" value={name} onChange={e=>setName(e.target.value)}/></label><label>测井CSV文件<input aria-label="测井CSV文件" type="file" accept=".csv" onChange={async e=>{const f=e.target.files?.[0];if(f){if(f.size>400000){setMessage('CSV不能超过400KB');return}setSource(f.name);setText(await f.text())}}}/></label><label className="wide">测井内容<textarea aria-label="测井内容" value={text} onChange={e=>setText(e.target.value)} placeholder="borehole,depth_m,value,truth"/></label><button className="primary">校验并导入测井</button></form>}</>}
+import {useState} from 'react';
+import * as api from '../api/datasets';
+import {useResource} from '../hooks/useResource';
+import {refreshResources} from '../stores/resources';
+import PageTitle from '../components/common/PageTitle';
+import Notice from '../components/common/Notice';
+import type {User} from '../types/entities';
+
+export default function Datasets({user}:{user:User}){
+ const{data,error}=useResource(api.list,[]);
+ const[name,setName]=useState('补充完整孔段测井'),[source,setSource]=useState('shenxi_logs_import.csv'),[text,setText]=useState(''),[message,setMessage]=useState('');
+ return (
+  <>
+   <PageTitle chapter="03 / COMPLETE LOGS" title="缺一层，就不静默跨过去" description="CSV为borehole,depth_m,value，truth仅可选模拟参考。每孔至少3点、最多1000点，按输入固定1米严格递增；重复/缺层/倒序和非有限读数拒绝。野外碎片请在02碎片接收中按批次组装、封存后一次发布，发布结果在此核对且不再变化。"/>
+   <Notice error={error||message}/>
+   <section className="paper table-scroll">
+    <table>
+     <thead><tr><th>测井来源</th><th>建立方式</th><th>记录数</th><th>完整孔段</th></tr></thead>
+     <tbody>{data.map(d=>(
+      <tr key={d.id}>
+       <td><b>{d.name}</b><small>{d.source}</small></td>
+       <td>{d.from_batch
+         ? <span className="badge published">批次封存发布</span>
+         : <span className="badge">完整CSV直接导入</span>}</td>
+       <td>{d.row_count}</td>
+       <td>{d.boreholes.join(' / ')}</td>
+      </tr>
+     ))}</tbody>
+    </table>
+   </section>
+   {user.role!=='viewer'&&(
+    <form className="paper form-grid" onSubmit={async e=>{
+     e.preventDefault();
+     try{await api.create({name,source,csv_text:text});setMessage('');setText('');refreshResources();}
+     catch(e:any){setMessage(e.message);}
+    }}>
+     <label>数据集名称<input aria-label="数据集名称" value={name} onChange={e=>setName(e.target.value)}/></label>
+     <label>测井CSV文件<input aria-label="测井CSV文件" type="file" accept=".csv" onChange={async e=>{
+      const f=e.target.files?.[0];
+      if(f){if(f.size>400000){setMessage('CSV不能超过400KB');return;}setSource(f.name);setText(await f.text());}
+     }}/></label>
+     <label className="wide">测井内容<textarea aria-label="测井内容" value={text} onChange={e=>setText(e.target.value)} placeholder="borehole,depth_m,value,truth"/></label>
+     <button className="primary">校验并导入测井</button>
+    </form>
+   )}
+  </>
+ );
+}

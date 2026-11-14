@@ -8,5 +8,11 @@ def lock_snapshot(dataset,model,borehole):
  if len(rows)<3 or any(not math.isclose(b['depth_m']-a['depth_m'],1.,rel_tol=0,abs_tol=1e-9) for a,b in zip(rows,rows[1:])):raise ValueError('需选择存在且完整的1米等距孔段，不跨缺层')
  snapshot={'rows':rows,'model':{k:model[k] for k in ('id','name','revision','config')},'borehole':borehole,'depth_step_m':1.,'dataset_name':dataset['name'],'source':dataset['source']};checksum=hashlib.sha256(json.dumps(snapshot,sort_keys=True,ensure_ascii=False,separators=(',',':'),allow_nan=False).encode()).hexdigest();return snapshot,checksum
 def create(data):
- d=repo.get('datasets',data.dataset_id);m=repo.get('state_models',data.model_id);snapshot,checksum=lock_snapshot(d,m,data.borehole)
+ d=repo.get('datasets',data.dataset_id);m=repo.get('state_models',data.model_id)
+ _assert_dataset_published(d['id'])
+ snapshot,checksum=lock_snapshot(d,m,data.borehole)
  return repo.put('studies',SequenceStudy(new_id('study'),data.name,data.dataset_id,data.model_id,data.borehole,snapshot,checksum,now()))
+def _assert_dataset_published(dataset_id):
+ for b in repo.all_rows('ingest_batches'):
+  if b.get('dataset_id')==dataset_id and b['status']!='published':
+   raise ValueError('采集批次尚未确认齐全并发布，不能基于不完整数据建立研究')

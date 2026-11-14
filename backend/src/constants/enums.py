@@ -12,3 +12,11 @@ class ReviewStatus(str, Enum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
+class BatchStatus(str, Enum):
+    RECEIVING = "receiving"
+    SEALED = "sealed"
+    PUBLISHED = "published"
+class FragmentStatus(str, Enum):
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    DUPLICATE = "duplicate"

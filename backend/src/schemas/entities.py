@@ -11,6 +11,13 @@ class DatasetInput(InputModel):
  csv_text:str=Field(min_length=10,max_length=400000)
 class RenameDataset(InputModel):
  name:str=Field(min_length=2,max_length=100)
+class BatchInput(InputModel):
+ name:str=Field(min_length=2,max_length=100)
+ source:str=Field(default='field_fragment_202611.csv',max_length=100)
+ expected_fragments:int=Field(default=0,ge=0,le=200)
+class FragmentInput(InputModel):
+ fragment_no:int|None=Field(default=None,ge=1,le=200)
+ csv_text:str=Field(min_length=10,max_length=400000)
 class StateModelInput(InputModel):
  name:str=Field(min_length=2,max_length=100)
  model_json:str=Field(min_length=2,max_length=15000)
